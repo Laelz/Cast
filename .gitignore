@@ -1,0 +1,58 @@
+# =========================
+# PHP / Composer
+# =========================
+vendor/
+
+# =========================
+# Environment
+# =========================
+.env
+.env.local
+.env.*.local
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+storage/logs/
+
+# =========================
+# Cache / Temp
+# =========================
+cache/
+tmp/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+# =========================
+# PHPUnit
+# =========================
+.phpunit.result.cache
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+
+# =========================
+# Node (se usar depois)
+# =========================
+node_modules/
+dist/
+build/
