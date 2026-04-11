@@ -42,43 +42,6 @@ $app->get('/login', function ($request, $response) {
     return $this->view->render($response, 'auth/login.twig');
 });
 
-$app->post('/login', function ($request, $response) {
-    $data = $request->getParsedBody();
-    $email = trim($data['email'] ?? '');
-    $password = $data['password'] ?? '';
-
-    $account = $this->entityManager
-        ->getRepository(Account::class)
-        ->findOneBy(['email' => $email]);
-
-    if (!$account || !password_verify($password, $account->getPassword())) {
-        $_SESSION['flash'] = [
-            'type' => 'danger',
-            'message' => 'Credenciais inválidas.'
-        ];
-
-        return $response->withRedirect('/login');
-    }
-
-    $_SESSION['auth'] = [
-        'id' => $account->getId(),
-        'name' => $account->getName(),
-        'email' => $account->getEmail(),
-        'role' => $account->getRole(),
-    ];
-
-    $_SESSION['flash'] = [
-        'type' => 'success',
-        'message' => 'Login realizado com sucesso.'
-    ];
-
-    if ($account->getRole() === 'admin') {
-        return $response->withRedirect('/admin');
-    }
-
-    return $response->withRedirect('/account');
-});
-
 $app->get('/logout', function ($request, $response) {
     unset($_SESSION['auth']);
 

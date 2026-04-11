@@ -145,11 +145,3 @@ Isso permite extrato correto para ambas as contas.
 
 ### Saldo persistido em `accounts`
 Mantido para leitura rápida e performance.
-
-## Melhorias Futuras
-
-- JWT / autenticação robusta
-- Middleware em classes dedicadas
-- Repository Pattern
-- Testes unitários com mocks
-- API REST completa

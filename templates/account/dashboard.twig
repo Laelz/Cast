@@ -3,25 +3,37 @@
 {% block title %}Usuário da Conta{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row g-4">
     <div class="col-lg-4">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header">
-                <strong>Resumo da Conta</strong>
-            </div>
+        <div class="card shadow-sm border-0">
             <div class="card-body">
-                <p><strong>ID:</strong> {{ selectedAccount.id }}</p>
-                <p><strong>Nome:</strong> {{ selectedAccount.name }}</p>
-                <p><strong>Saldo:</strong> R$ {{ selectedAccount.balance|number_format(2, ',', '.') }}</p>
+                <p class="text-muted mb-2">Conta</p>
+                <h2 class="h5 mb-3">{{ selectedAccount.name }}</h2>
+
+                <div class="mb-2">
+                    <span class="text-muted">ID:</span>
+                    <strong>{{ selectedAccount.id }}</strong>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-muted">Saldo atual:</span>
+                    <div class="fs-3 fw-bold text-primary">
+                        R$ {{ selectedAccount.balance|number_format(2, ',', '.') }}
+                    </div>
+                </div>
+
+                <span class="badge bg-secondary text-uppercase">{{ selectedAccount.role }}</span>
             </div>
         </div>
     </div>
 
     <div class="col-lg-8">
-        <div class="row">
+        <div class="row g-4">
             <div class="col-md-6">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header"><strong>Creditar</strong></div>
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white">
+                        <strong>Creditar</strong>
+                    </div>
                     <div class="card-body">
                         <form method="post" action="/account/credit">
                             <div class="mb-3">
@@ -32,15 +44,17 @@
                                 <label class="form-label">Descrição</label>
                                 <input type="text" name="description" class="form-control">
                             </div>
-                            <button type="submit" class="btn btn-success">Creditar</button>
+                            <button type="submit" class="btn btn-success w-100">Creditar</button>
                         </form>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-6">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header"><strong>Debitar</strong></div>
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white">
+                        <strong>Debitar</strong>
+                    </div>
                     <div class="card-body">
                         <form method="post" action="/account/debit">
                             <div class="mb-3">
@@ -51,15 +65,17 @@
                                 <label class="form-label">Descrição</label>
                                 <input type="text" name="description" class="form-control">
                             </div>
-                            <button type="submit" class="btn btn-danger">Debitar</button>
+                            <button type="submit" class="btn btn-danger w-100">Debitar</button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow-sm mb-4">
-            <div class="card-header"><strong>Transferir</strong></div>
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-white">
+                <strong>Transferir</strong>
+            </div>
             <div class="card-body">
                 <form method="post" action="/account/transfer">
                     <div class="row">
@@ -91,14 +107,17 @@
             </div>
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-header"><strong>Extrato</strong></div>
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Extrato</strong>
+                <span class="badge bg-light text-dark">{{ statement|length }} movimentações</span>
+            </div>
             <div class="card-body">
                 {% if statement is empty %}
                     <p class="text-muted mb-0">Nenhuma movimentação encontrada.</p>
                 {% else %}
                     <div class="table-responsive">
-                        <table class="table table-bordered align-middle">
+                        <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -113,8 +132,26 @@
                                 {% for tx in statement %}
                                     <tr>
                                         <td>{{ tx.id }}</td>
-                                        <td>{{ tx.type }}</td>
-                                        <td>R$ {{ tx.amount|number_format(2, ',', '.') }}</td>
+                                        <td>
+                                            {% if tx.type == 'credit' %}
+                                                <span class="badge bg-success">Crédito</span>
+                                            {% elseif tx.type == 'debit' %}
+                                                <span class="badge bg-danger">Débito</span>
+                                            {% elseif tx.type == 'transfer_in' %}
+                                                <span class="badge bg-primary">Transferência recebida</span>
+                                            {% elseif tx.type == 'transfer_out' %}
+                                                <span class="badge bg-warning text-dark">Transferência enviada</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ tx.type }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-semibold">
+                                            {% if tx.type in ['debit', 'transfer_out'] %}
+                                                <span class="text-danger">- R$ {{ tx.amount|number_format(2, ',', '.') }}</span>
+                                            {% else %}
+                                                <span class="text-success">+ R$ {{ tx.amount|number_format(2, ',', '.') }}</span>
+                                            {% endif %}
+                                        </td>
                                         <td>{{ tx.description ?: '-' }}</td>
                                         <td>
                                             {% if tx.related_account_id %}

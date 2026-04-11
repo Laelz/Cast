@@ -4,22 +4,22 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="card shadow-sm mb-4">
-            <div class="card-body text-center">
-                <h1 class="h3 mb-3">Banco Digital</h1>
+    <div class="col-lg-10">
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center py-5">
+                <h1 class="display-6 fw-bold mb-3">Banco Digital</h1>
                 <p class="text-muted mb-4">
-                    Sistema bancário com contas, crédito, débito, transferência e extrato.
+                    Sistema bancário com criação de contas, crédito, débito, transferência e extrato.
                 </p>
 
                 {% if auth %}
                     {% if auth.role == 'admin' %}
-                        <a href="/admin" class="btn btn-primary btn-lg">Ir para Admin</a>
+                        <a href="/admin" class="btn btn-primary btn-lg px-4">Ir para Admin</a>
                     {% else %}
-                        <a href="/account" class="btn btn-primary btn-lg">Ir para Minha Conta</a>
+                        <a href="/account" class="btn btn-primary btn-lg px-4">Ir para Minha Conta</a>
                     {% endif %}
                 {% else %}
-                    <a href="/login" class="btn btn-primary btn-lg">Fazer Login</a>
+                    <a href="/login" class="btn btn-primary btn-lg px-4">Fazer Login</a>
                 {% endif %}
             </div>
         </div>
