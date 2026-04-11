@@ -1,0 +1,81 @@
+{% extends "layout.twig" %}
+
+{% block title %}Admin Bancário{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <strong>Criar Conta</strong>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/accounts/create">
+                    <div class="mb-3">
+                        <label class="form-label">Nome</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">E-mail</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Senha</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Perfil</label>
+                        <select name="role" class="form-select">
+                            <option value="user">Usuário</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Criar Conta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <strong>Contas Cadastradas</strong>
+            </div>
+            <div class="card-body">
+                {% if accounts is empty %}
+                    <p class="text-muted mb-0">Nenhuma conta cadastrada.</p>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>E-mail</th>
+                                    <th>Perfil</th>
+                                    <th>Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for account in accounts %}
+                                    <tr>
+                                        <td>{{ account.id }}</td>
+                                        <td>{{ account.name }}</td>
+                                        <td>{{ account.email }}</td>
+                                        <td>{{ account.role }}</td>
+                                        <td>R$ {{ account.balance|number_format(2, ',', '.') }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

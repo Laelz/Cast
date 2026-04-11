@@ -1,0 +1,35 @@
+{% extends "layout.twig" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <strong>Acesso ao Sistema</strong>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/login">
+                    <div class="mb-3">
+                        <label class="form-label">E-mail</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Senha</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                </form>
+
+                <hr>
+
+                <p class="mb-1"><strong>Admin demo:</strong> admin@bank.com</p>
+                <p class="mb-0"><strong>Senha:</strong> 123456</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
