@@ -48,8 +48,8 @@ Para garantir consistência em operações concorrentes:
 ### 1. Clonar o repositório
 
 ```bash
-git clone <repo-url>
-cd banco-digital
+git clone https://github.com/Laelz/Cast.git
+cd Cast
 ```
 
 ### 2. Subir os containers
