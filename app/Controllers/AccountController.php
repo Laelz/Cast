@@ -2,76 +2,174 @@
 
 namespace App\Controllers;
 
+use App\Entities\Account;
 use App\Services\AccountService;
+use Doctrine\ORM\EntityManager;
 
 class AccountController
 {
+    private EntityManager $entityManager;
     private AccountService $accountService;
+    private \Slim\Views\Twig $view;
 
-    public function __construct(AccountService $accountService)
-    {
+    public function __construct(
+        EntityManager $entityManager,
+        AccountService $accountService,
+        \Slim\Views\Twig $view
+    ) {
+        $this->entityManager = $entityManager;
         $this->accountService = $accountService;
+        $this->view = $view;
     }
-
-    public function create($request, $response)
+    public function dashboard($request, $response)
     {
-        $data = $request->getParsedBody();
+        $accountId = (int) ($_SESSION['auth']['id'] ?? 0);
+        $account = $this->entityManager->find(Account::class, $accountId);
 
-        $this->accountService->createAccount(
-            $data['name'],
-            $data['email'],
-            $data['password'],
-            $data['role'] ?? 'user'
-        );
+        if (!$account) {
+            $_SESSION['flash'] = [
+                'type' => 'danger',
+                'message' => 'Conta não encontrada.'
+            ];
 
-        return $response->withJson([
-            'message' => 'Conta criada com sucesso'
+            return $response->withRedirect('/login');
+        }
+
+        $accounts = $this->entityManager->getRepository(Account::class)->findAll();
+        $accountsData = [];
+
+        foreach ($accounts as $item) {
+            $accountsData[] = [
+                'id' => $item->getId(),
+                'name' => $item->getName(),
+                'email' => $item->getEmail(),
+                'role' => $item->getRole(),
+                'balance' => $item->getBalance(),
+            ];
+        }
+
+        $selectedAccount = [
+            'id' => $account->getId(),
+            'name' => $account->getName(),
+            'email' => $account->getEmail(),
+            'role' => $account->getRole(),
+            'balance' => $account->getBalance(),
+        ];
+
+        $transactions = $this->accountService->getStatement($accountId);
+        $statement = [];
+        $creditsTotal = 0.0;
+        $debitsTotal = 0.0;
+
+        foreach ($transactions as $transaction) {
+            $type = $transaction->getType();
+            $amount = $transaction->getAmount();
+
+            if (in_array($type, ['credit', 'transfer_in'], true)) {
+                $creditsTotal += $amount;
+            }
+
+            if (in_array($type, ['debit', 'transfer_out'], true)) {
+                $debitsTotal += $amount;
+            }
+
+            $statement[] = [
+                'id' => $transaction->getId(),
+                'type' => $type,
+                'amount' => $amount,
+                'description' => $transaction->getDescription(),
+                'created_at' => $transaction->getCreatedAt()->format('d/m/Y H:i:s'),
+                'related_account_id' => $transaction->getRelatedAccount()
+                    ? $transaction->getRelatedAccount()->getId()
+                    : null,
+            ];
+        }
+
+        return $this->view->render($response, 'account/dashboard.twig', [
+            'accounts' => $accountsData,
+            'selectedAccount' => $selectedAccount,
+            'statement' => $statement,
+            'credits_total' => $creditsTotal,
+            'debits_total' => $debitsTotal,
         ]);
     }
 
     public function credit($request, $response)
     {
         $data = $request->getParsedBody();
+        $accountId = (int) ($_SESSION['auth']['id'] ?? 0);
 
-        $this->accountService->credit(
-            (int)$data['account_id'],
-            (float)$data['amount'],
-            $data['description'] ?? null
-        );
+        try {
+            $this->accountService->credit(
+                $accountId,
+                (float) $data['amount'],
+                $data['description'] ?? null
+            );
 
-        return $response->withJson([
-            'message' => 'Crédito realizado com sucesso'
-        ]);
+            $_SESSION['flash'] = [
+                'type' => 'success',
+                'message' => 'Crédito realizado com sucesso.'
+            ];
+        } catch (\Throwable $e) {
+            $_SESSION['flash'] = [
+                'type' => 'danger',
+                'message' => $e->getMessage()
+            ];
+        }
+
+        return $response->withRedirect('/account');
     }
 
     public function debit($request, $response)
     {
         $data = $request->getParsedBody();
+        $accountId = (int) ($_SESSION['auth']['id'] ?? 0);
 
-        $this->accountService->debit(
-            (int)$data['account_id'],
-            (float)$data['amount'],
-            $data['description'] ?? null
-        );
+        try {
+            $this->accountService->debit(
+                $accountId,
+                (float) $data['amount'],
+                $data['description'] ?? null
+            );
 
-        return $response->withJson([
-            'message' => 'Débito realizado com sucesso'
-        ]);
+            $_SESSION['flash'] = [
+                'type' => 'success',
+                'message' => 'Débito realizado com sucesso.'
+            ];
+        } catch (\Throwable $e) {
+            $_SESSION['flash'] = [
+                'type' => 'danger',
+                'message' => $e->getMessage()
+            ];
+        }
+
+        return $response->withRedirect('/account');
     }
 
     public function transfer($request, $response)
     {
         $data = $request->getParsedBody();
+        $fromAccountId = (int) ($_SESSION['auth']['id'] ?? 0);
 
-        $this->accountService->transfer(
-            (int)$data['from_account_id'],
-            (int)$data['to_account_id'],
-            (float)$data['amount'],
-            $data['description'] ?? null
-        );
+        try {
+            $this->accountService->transfer(
+                $fromAccountId,
+                (int) $data['to_account_id'],
+                (float) $data['amount'],
+                $data['description'] ?? null
+            );
 
-        return $response->withJson([
-            'message' => 'Transferência realizada com sucesso'
-        ]);
+            $_SESSION['flash'] = [
+                'type' => 'success',
+                'message' => 'Transferência realizada com sucesso.'
+            ];
+        } catch (\Throwable $e) {
+            $_SESSION['flash'] = [
+                'type' => 'danger',
+                'message' => $e->getMessage()
+            ];
+        }
+
+        return $response->withRedirect('/account');
     }
 }
