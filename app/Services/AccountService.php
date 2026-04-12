@@ -21,6 +21,26 @@ class AccountService
         string $password,
         string $role = 'user'
     ): Account {
+        if (trim($name) === '') {
+            throw new \InvalidArgumentException('O nome é obrigatório.');
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException('E-mail inválido.');
+        }
+
+        if (strlen($password) < 6) {
+            throw new \InvalidArgumentException('A senha deve ter no mínimo 6 caracteres.');
+        }
+
+        $existing = $this->entityManager
+            ->getRepository(Account::class)
+            ->findOneBy(['email' => $email]);
+
+        if ($existing) {
+            throw new \InvalidArgumentException('Já existe uma conta cadastrada com esse e-mail.');
+        }
+
         $account = new Account($name, $email, $password, $role);
 
         $this->entityManager->persist($account);
@@ -28,7 +48,6 @@ class AccountService
 
         return $account;
     }
-
     public function credit(int $accountId, float $amount, ?string $description = null): void
     {
         $this->entityManager->wrapInTransaction(function () use ($accountId, $amount, $description) {
