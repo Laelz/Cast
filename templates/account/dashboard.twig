@@ -107,6 +107,41 @@
             </div>
         </div>
 
+        <div class="row g-3 mt-1">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Créditos</p>
+                        <div class="fs-5 fw-bold text-success">
+                            R$ {{ credits_total|number_format(2, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Débitos</p>
+                        <div class="fs-5 fw-bold text-danger">
+                            R$ {{ debits_total|number_format(2, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Movimentações</p>
+                        <div class="fs-5 fw-bold text-dark">
+                            {{ statement|length }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card shadow-sm border-0 mt-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <strong>Extrato</strong>
@@ -134,13 +169,13 @@
                                         <td>{{ tx.id }}</td>
                                         <td>
                                             {% if tx.type == 'credit' %}
-                                                <span class="badge bg-success">Crédito</span>
+                                                <span class="badge bg-success">⬆ Crédito</span>
                                             {% elseif tx.type == 'debit' %}
-                                                <span class="badge bg-danger">Débito</span>
+                                                <span class="badge bg-danger">⬇ Débito</span>
                                             {% elseif tx.type == 'transfer_in' %}
-                                                <span class="badge bg-primary">Transferência recebida</span>
+                                                <span class="badge bg-primary">↙ Recebida</span>
                                             {% elseif tx.type == 'transfer_out' %}
-                                                <span class="badge bg-warning text-dark">Transferência enviada</span>
+                                                <span class="badge bg-warning text-dark">↗ Enviada</span>
                                             {% else %}
                                                 <span class="badge bg-secondary">{{ tx.type }}</span>
                                             {% endif %}
