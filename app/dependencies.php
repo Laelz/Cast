@@ -3,6 +3,8 @@
 use Dotenv\Dotenv;
 use App\Services\AccountService;
 use App\Controllers\AccountController;
+use App\Controllers\AuthController;
+use App\Controllers\AdminController;
 
 $container = $app->getContainer();
 
@@ -21,9 +23,26 @@ $container['accountService'] = function ($container) {
     return new AccountService($container->get('entityManager'));
 };
 
+$container['AuthController'] = function ($container) {
+    return new AuthController(
+        $container->get('entityManager'),
+        $container->get('view')
+    );
+};
+
+$container['AdminController'] = function ($container) {
+    return new AdminController(
+        $container->get('entityManager'),
+        $container->get('accountService'),
+        $container->get('view')
+    );
+};
+
 $container['AccountController'] = function ($container) {
     return new AccountController(
-        $container->get('accountService')
+        $container->get('entityManager'),
+        $container->get('accountService'),
+        $container->get('view')
     );
 };
 
