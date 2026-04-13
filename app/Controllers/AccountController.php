@@ -21,6 +21,7 @@ class AccountController
         $this->accountService = $accountService;
         $this->view = $view;
     }
+    
     public function dashboard($request, $response)
     {
         $accountId = (int) ($_SESSION['auth']['id'] ?? 0);
@@ -56,7 +57,20 @@ class AccountController
             'balance' => $account->getBalance(),
         ];
 
-        $transactions = $this->accountService->getStatement($accountId);
+        $params = $request->getQueryParams();
+
+        $filters = [
+            'type' => $params['type'] ?? '',
+            'date_from' => $params['date_from'] ?? '',
+            'date_to' => $params['date_to'] ?? '',
+        ];
+
+        $page = isset($params['page']) ? max(1, (int) $params['page']) : 1;
+        $perPage = 10;
+
+        $statementResult = $this->accountService->getStatement($accountId, $filters, $page, $perPage);
+        $transactions = $statementResult['items'];
+
         $statement = [];
         $creditsTotal = 0.0;
         $debitsTotal = 0.0;
@@ -91,6 +105,13 @@ class AccountController
             'statement' => $statement,
             'credits_total' => $creditsTotal,
             'debits_total' => $debitsTotal,
+            'filters' => $filters,
+            'pagination' => [
+                'page' => $statementResult['page'],
+                'per_page' => $statementResult['per_page'],
+                'total' => $statementResult['total'],
+                'total_pages' => $statementResult['total_pages'],
+            ],
         ]);
     }
 

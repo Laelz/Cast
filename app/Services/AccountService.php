@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Entities\Account;
 use App\Entities\Transaction;
 use Doctrine\ORM\EntityManager;
+use App\Exceptions\AccountNotFoundException;
+use App\Exceptions\InvalidTransferException;
+use App\Exceptions\InvalidTransactionAmountException;
 
 class AccountService
 {
@@ -54,7 +57,7 @@ class AccountService
             $account = $this->entityManager->find(Account::class, $accountId);
 
             if (!$account) {
-                throw new \RuntimeException('Conta não encontrada.');
+                throw new AccountNotFoundException();
             }
 
             $this->entityManager->lock($account, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
@@ -81,7 +84,7 @@ class AccountService
             $account = $this->entityManager->find(Account::class, $accountId);
 
             if (!$account) {
-                throw new \RuntimeException('Conta não encontrada.');
+                throw new AccountNotFoundException();
             }
 
             $this->entityManager->lock($account, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
@@ -109,7 +112,11 @@ class AccountService
         ?string $description = null
     ): void {
         if ($fromAccountId === $toAccountId) {
-            throw new \InvalidArgumentException('Não é possível transferir para a mesma conta.');
+            throw new InvalidTransferException('Não é possível transferir para a mesma conta.');
+        }
+
+        if ($amount <= 0) {
+            throw new InvalidTransactionAmountException('O valor da transferência deve ser maior que zero.');
         }
 
         $this->entityManager->wrapInTransaction(function () use (
@@ -125,7 +132,7 @@ class AccountService
             $secondAccount = $this->entityManager->find(Account::class, $secondId);
 
             if (!$firstAccount || !$secondAccount) {
-                throw new \RuntimeException('Conta de origem ou destino não encontrada.');
+                throw new AccountNotFoundException('Conta de origem ou destino não encontrada.');
             }
 
             $this->entityManager->lock($firstAccount, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
@@ -160,19 +167,62 @@ class AccountService
         $this->entityManager->flush();
     }
 
-    public function getStatement(int $accountId): array
-    {
+    public function getStatement(
+        int $accountId,
+        array $filters = [],
+        int $page = 1,
+        int $perPage = 10
+    ): array {
         $account = $this->entityManager->find(Account::class, $accountId);
 
         if (!$account) {
-            throw new \RuntimeException('Conta não encontrada.');
+            throw new AccountNotFoundException();
         }
 
-        return $this->entityManager
+        $page = max(1, $page);
+        $offset = ($page - 1) * $perPage;
+
+        $qb = $this->entityManager
             ->getRepository(Transaction::class)
-            ->findBy(
-                ['account' => $account],
-                ['createdAt' => 'DESC']
-            );
+            ->createQueryBuilder('t')
+            ->where('t.account = :account')
+            ->setParameter('account', $account);
+
+        if (!empty($filters['type'])) {
+            $qb->andWhere('t.type = :type')
+            ->setParameter('type', $filters['type']);
+        }
+
+        if (!empty($filters['date_from'])) {
+            $qb->andWhere('t.createdAt >= :dateFrom')
+            ->setParameter('dateFrom', new \DateTimeImmutable($filters['date_from'] . ' 00:00:00'));
+        }
+
+        if (!empty($filters['date_to'])) {
+            $qb->andWhere('t.createdAt <= :dateTo')
+            ->setParameter('dateTo', new \DateTimeImmutable($filters['date_to'] . ' 23:59:59'));
+        }
+
+        $countQb = clone $qb;
+        $total = (int) $countQb
+            ->select('COUNT(t.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $transactions = $qb
+            ->orderBy('t.createdAt', 'DESC')
+            ->addOrderBy('t.id', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
+
+        return [
+            'items' => $transactions,
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => (int) ceil($total / $perPage),
+        ];
     }
 }
