@@ -2,6 +2,8 @@
 
 namespace App\Entities;
 
+use App\Exceptions\InsufficientBalanceException;
+use App\Exceptions\InvalidTransactionAmountException;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -77,11 +79,11 @@ class Account
     public function debit(float $amount): void
     {
         if ($amount <= 0) {
-            throw new \InvalidArgumentException('O valor do débito deve ser maior que zero.');
+            throw new InvalidTransactionAmountException();
         }
 
         if ($this->getBalance() < $amount) {
-            throw new \RuntimeException('Saldo insuficiente.');
+            throw new InsufficientBalanceException();
         }
 
         $this->setBalance($this->getBalance() - $amount);
@@ -90,7 +92,7 @@ class Account
     public function credit(float $amount): void
     {
         if ($amount <= 0) {
-            throw new \InvalidArgumentException('O valor do crédito deve ser maior que zero.');
+            throw new InvalidTransactionAmountException();
         }
 
         $this->setBalance($this->getBalance() + $amount);
