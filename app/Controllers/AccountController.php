@@ -21,7 +21,6 @@ class AccountController
         $this->accountService = $accountService;
         $this->view = $view;
     }
-    
     public function dashboard($request, $response)
     {
         $accountId = (int) ($_SESSION['auth']['id'] ?? 0);

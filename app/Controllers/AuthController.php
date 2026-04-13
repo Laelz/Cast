@@ -84,10 +84,4 @@ class AuthController
 
         return $response->withRedirect('/login');
     }
-
-    private function render($response, string $template, array $data = [])
-    {
-        global $app;
-        return $app->getContainer()->get('view')->render($response, $template, $data);
-    }
 }

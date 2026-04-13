@@ -27,7 +27,21 @@ class AdminController
         $accounts = $this->entityManager->getRepository(Account::class)->findAll();
 
         $data = [];
+        $totalAccounts = 0;
+        $totalUsers = 0;
+        $totalAdmins = 0;
+        $totalBalance = 0.0;
+
         foreach ($accounts as $account) {
+            $totalAccounts++;
+            $totalBalance += $account->getBalance();
+
+            if ($account->getRole() === 'admin') {
+                $totalAdmins++;
+            } else {
+                $totalUsers++;
+            }
+
             $data[] = [
                 'id' => $account->getId(),
                 'name' => $account->getName(),
@@ -38,7 +52,11 @@ class AdminController
         }
 
         return $this->view->render($response, 'admin/dashboard.twig', [
-            'accounts' => $data
+            'accounts' => $data,
+            'total_accounts' => $totalAccounts,
+            'total_users' => $totalUsers,
+            'total_admins' => $totalAdmins,
+            'total_balance' => $totalBalance,
         ]);
     }
 
