@@ -6,6 +6,9 @@ use Doctrine\ORM\EntityManager;
 use App\Services\AccountService;
 use App\Entities\Account;
 use App\Entities\Transaction;
+use App\Exceptions\InsufficientBalanceException;
+use App\Exceptions\InvalidTransferException;
+use App\Exceptions\InvalidTransactionAmountException;
 
 class AccountServiceTest extends TestCase
 {
@@ -14,9 +17,6 @@ class AccountServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
-        $dotenv->load();
-
         $this->entityManager = require __DIR__ . '/../../config/doctrine.php';
         $this->accountService = new AccountService($this->entityManager);
 
@@ -26,9 +26,11 @@ class AccountServiceTest extends TestCase
         $conn->executeStatement('DELETE FROM accounts');
         $conn->executeStatement('ALTER SEQUENCE accounts_id_seq RESTART WITH 1');
         $conn->executeStatement('ALTER SEQUENCE transactions_id_seq RESTART WITH 1');
+
+        $this->entityManager->clear();
     }
 
-    public function testCreateAccount(): void
+    public function testCreateAccountSuccessfully(): void
     {
         $account = $this->accountService->createAccount(
             'Teste',
@@ -42,16 +44,58 @@ class AccountServiceTest extends TestCase
         $this->assertSame('teste@email.com', $account->getEmail());
         $this->assertSame('user', $account->getRole());
         $this->assertSame(0.0, $account->getBalance());
+        $this->assertTrue(password_verify('123456', $account->getPassword()));
     }
 
-    public function testCredit(): void
+    public function testCreateAccountWithDuplicateEmail(): void
     {
-        $account = $this->accountService->createAccount(
-            'Teste',
-            'credit@email.com',
+        $this->accountService->createAccount(
+            'Primeiro',
+            'duplicado@email.com',
             '123456',
             'user'
         );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Já existe uma conta cadastrada com esse e-mail.');
+
+        $this->accountService->createAccount(
+            'Segundo',
+            'duplicado@email.com',
+            '123456',
+            'user'
+        );
+    }
+
+    public function testCreateAccountWithInvalidEmail(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('E-mail inválido.');
+
+        $this->accountService->createAccount(
+            'Teste',
+            'email-invalido',
+            '123456',
+            'user'
+        );
+    }
+
+    public function testCreateAccountWithShortPassword(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A senha deve ter no mínimo 6 caracteres.');
+
+        $this->accountService->createAccount(
+            'Teste',
+            'senha@email.com',
+            '123',
+            'user'
+        );
+    }
+
+    public function testCreditSuccessfully(): void
+    {
+        $account = $this->createUser('credit@email.com');
 
         $this->accountService->credit($account->getId(), 100, 'Crédito de teste');
 
@@ -60,16 +104,28 @@ class AccountServiceTest extends TestCase
         $updated = $this->entityManager->find(Account::class, $account->getId());
 
         $this->assertSame(100.0, $updated->getBalance());
+
+        $transactions = $this->entityManager
+            ->getRepository(Transaction::class)
+            ->findBy(['account' => $updated]);
+
+        $this->assertCount(1, $transactions);
+        $this->assertSame('credit', $transactions[0]->getType());
+        $this->assertSame(100.0, $transactions[0]->getAmount());
     }
 
-    public function testDebit(): void
+    public function testCreditWithInvalidAmount(): void
     {
-        $account = $this->accountService->createAccount(
-            'Teste',
-            'debit@email.com',
-            '123456',
-            'user'
-        );
+        $account = $this->createUser('credit-invalid@email.com');
+
+        $this->expectException(InvalidTransactionAmountException::class);
+
+        $this->accountService->credit($account->getId(), 0, 'Valor inválido');
+    }
+
+    public function testDebitSuccessfully(): void
+    {
+        $account = $this->createUser('debit@email.com');
 
         $this->accountService->credit($account->getId(), 100, 'Crédito inicial');
         $this->accountService->debit($account->getId(), 40, 'Débito de teste');
@@ -83,34 +139,18 @@ class AccountServiceTest extends TestCase
 
     public function testDebitWithInsufficientBalance(): void
     {
-        $account = $this->accountService->createAccount(
-            'Teste',
-            'saldo@email.com',
-            '123456',
-            'user'
-        );
+        $account = $this->createUser('saldo@email.com');
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InsufficientBalanceException::class);
         $this->expectExceptionMessage('Saldo insuficiente.');
 
         $this->accountService->debit($account->getId(), 50, 'Tentativa inválida');
     }
 
-    public function testTransfer(): void
+    public function testTransferSuccessfully(): void
     {
-        $from = $this->accountService->createAccount(
-            'Origem',
-            'origem@email.com',
-            '123456',
-            'user'
-        );
-
-        $to = $this->accountService->createAccount(
-            'Destino',
-            'destino@email.com',
-            '123456',
-            'user'
-        );
+        $from = $this->createUser('origem@email.com');
+        $to = $this->createUser('destino@email.com');
 
         $this->accountService->credit($from->getId(), 200, 'Saldo inicial');
         $this->accountService->transfer($from->getId(), $to->getId(), 50, 'Transferência teste');
@@ -128,20 +168,53 @@ class AccountServiceTest extends TestCase
             ->findBy([], ['id' => 'ASC']);
 
         $this->assertCount(3, $transactions);
+        $this->assertSame('credit', $transactions[0]->getType());
+        $this->assertSame('transfer_out', $transactions[1]->getType());
+        $this->assertSame('transfer_in', $transactions[2]->getType());
     }
 
     public function testTransferToSameAccount(): void
     {
-        $account = $this->accountService->createAccount(
-            'Mesmo',
-            'mesmo@email.com',
-            '123456',
-            'user'
-        );
+        $account = $this->createUser('mesmo@email.com');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidTransferException::class);
         $this->expectExceptionMessage('Não é possível transferir para a mesma conta.');
 
         $this->accountService->transfer($account->getId(), $account->getId(), 10, 'Inválida');
+    }
+
+    public function testTransferWithInvalidAmount(): void
+    {
+        $from = $this->createUser('origem2@email.com');
+        $to = $this->createUser('destino2@email.com');
+
+        $this->expectException(InvalidTransactionAmountException::class);
+
+        $this->accountService->transfer($from->getId(), $to->getId(), 0, 'Inválida');
+    }
+
+    public function testGetStatementReturnsTransactions(): void
+    {
+        $account = $this->createUser('statement@email.com');
+
+        $this->accountService->credit($account->getId(), 100, 'Crédito 1');
+        $this->accountService->debit($account->getId(), 30, 'Débito 1');
+
+        $this->entityManager->clear();
+
+        $statement = $this->accountService->getStatement($account->getId());
+
+        $this->assertCount(2, $statement);
+        $this->assertSame('debit', $statement[0]->getType());
+        $this->assertSame('credit', $statement[1]->getType());
+    }
+    private function createUser(string $email): Account
+    {
+        return $this->accountService->createAccount(
+            'Usuário Teste',
+            $email,
+            '123456',
+            'user'
+        );
     }
 }

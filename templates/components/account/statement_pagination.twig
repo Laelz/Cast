@@ -1,0 +1,31 @@
+{% if pagination.total_pages > 1 %}
+    {% set current = pagination.page %}
+    {% set totalPages = pagination.total_pages %}
+
+    <nav class="mt-3">
+        <ul class="pagination justify-content-end mb-0">
+            <li class="page-item {% if current <= 1 %}disabled{% endif %}">
+                <a class="page-link"
+                   href="/account?type={{ filters.type }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&page={{ current - 1 }}">
+                    Anterior
+                </a>
+            </li>
+
+            {% for p in 1..totalPages %}
+                <li class="page-item {% if p == current %}active{% endif %}">
+                    <a class="page-link"
+                       href="/account?type={{ filters.type }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&page={{ p }}">
+                        {{ p }}
+                    </a>
+                </li>
+            {% endfor %}
+
+            <li class="page-item {% if current >= totalPages %}disabled{% endif %}">
+                <a class="page-link"
+                   href="/account?type={{ filters.type }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&page={{ current + 1 }}">
+                    Próxima
+                </a>
+            </li>
+        </ul>
+    </nav>
+{% endif %}

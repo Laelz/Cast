@@ -13,11 +13,14 @@
                 </p>
 
                 {% if auth %}
-                    {% if auth.role == 'admin' %}
-                        <a href="/admin" class="btn btn-primary btn-lg px-4">Ir para Admin</a>
-                    {% else %}
-                        <a href="/account" class="btn btn-primary btn-lg px-4">Ir para Minha Conta</a>
-                    {% endif %}
+                    <div class="d-flex justify-content-center gap-2 flex-wrap">
+                        {% if auth.role == 'admin' %}
+                            <a href="/admin" class="btn btn-primary btn-lg px-4">Ir para Admin</a>
+                            <a href="/account" class="btn btn-outline-primary btn-lg px-4">Ir para Minha Conta</a>
+                        {% else %}
+                            <a href="/account" class="btn btn-primary btn-lg px-4">Ir para Minha Conta</a>
+                        {% endif %}
+                    </div>
                 {% else %}
                     <a href="/login" class="btn btn-primary btn-lg px-4">Fazer Login</a>
                 {% endif %}

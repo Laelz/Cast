@@ -23,6 +23,9 @@ final class CreateTransactionsTable extends AbstractMigration
                 'null' => true,
             ])
             ->addColumn('created_at', 'timestamp')
+            ->addIndex(['account_id'])
+            ->addIndex(['related_account_id'])
+            ->addIndex(['created_at'])
             ->addForeignKey('account_id', 'accounts', 'id', [
                 'delete' => 'RESTRICT',
                 'update' => 'NO_ACTION',

@@ -1,0 +1,38 @@
+<div class="card shadow-sm border-0 mt-4">
+    <div class="card-header bg-white">
+        <strong>Filtros do Extrato</strong>
+    </div>
+    <div class="card-body">
+        <form method="get" action="/account">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tipo</label>
+                    <select name="type" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="credit" {% if filters.type == 'credit' %}selected{% endif %}>Crédito</option>
+                        <option value="debit" {% if filters.type == 'debit' %}selected{% endif %}>Débito</option>
+                        <option value="transfer_in" {% if filters.type == 'transfer_in' %}selected{% endif %}>Transferência recebida</option>
+                        <option value="transfer_out" {% if filters.type == 'transfer_out' %}selected{% endif %}>Transferência enviada</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Data inicial</label>
+                    <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Data final</label>
+                    <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control">
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="d-grid w-100 gap-2">
+                        <button type="submit" class="btn btn-outline-primary">Filtrar</button>
+                        <a href="/account" class="btn btn-outline-secondary">Limpar</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

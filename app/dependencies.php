@@ -46,18 +46,7 @@ $container['AccountController'] = function ($container) {
     );
 };
 
-$container['view'] = function () {
-    $view = new \Slim\Views\Twig(__DIR__ . '/../templates');
-
-    $flash = $_SESSION['flash'] ?? null;
-    unset($_SESSION['flash']);
-
-    $view->getEnvironment()->addGlobal('flash', $flash);
-
-    return $view;
-};
-
-$container['view'] = function () {
+$container['view'] = function ($container) {
     $view = new \Slim\Views\Twig(__DIR__ . '/../templates');
 
     $flash = $_SESSION['flash'] ?? null;
@@ -65,6 +54,7 @@ $container['view'] = function () {
 
     $view->getEnvironment()->addGlobal('flash', $flash);
     $view->getEnvironment()->addGlobal('auth', $_SESSION['auth'] ?? null);
+    $view->getEnvironment()->addGlobal('csrf_token', $_SESSION['csrf_token'] ?? '');
 
     return $view;
 };
