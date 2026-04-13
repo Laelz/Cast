@@ -36,18 +36,61 @@
         {% block content %}{% endblock %}
     </main>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.submit-once-form').forEach(function (form) {
-            form.addEventListener('submit', function () {
-                const button = form.querySelector('.submit-once-btn');
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.money-input').forEach(function (input) {
+                input.addEventListener('input', function () {
+                    input.value = input.value.replace(/[^0-9.,]/g, '');
+                });
 
-                if (button) {
-                    button.disabled = true;
-                    button.innerText = 'Processando...';
-                }
+                input.addEventListener('blur', function () {
+                    let value = input.value.trim();
+
+                    if (value === '') {
+                        return;
+                    }
+
+                    value = value.replace(/\./g, '').replace(',', '.');
+
+                    const parsed = parseFloat(value);
+
+                    if (!isNaN(parsed) && parsed > 0) {
+                        input.value = parsed.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+                });
+            });
+
+            document.querySelectorAll('.submit-once-form').forEach(function (form) {
+                form.addEventListener('submit', function () {
+                    const moneyInputs = form.querySelectorAll('.money-input');
+
+                    moneyInputs.forEach(function (input) {
+                        let value = input.value.trim();
+
+                        if (value === '') {
+                            return;
+                        }
+
+                        value = value.replace(/\./g, '').replace(',', '.');
+
+                        const parsed = parseFloat(value);
+
+                        if (!isNaN(parsed) && parsed > 0) {
+                            input.value = parsed.toFixed(2);
+                        }
+                    });
+
+                    const button = form.querySelector('.submit-once-btn');
+
+                    if (button) {
+                        button.disabled = true;
+                        button.innerText = 'Processando...';
+                    }
+                });
             });
         });
-    });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

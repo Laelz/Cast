@@ -1,56 +1,81 @@
 # Banco Digital - Desafio Técnico
 
-Sistema bancário desenvolvido como solução para desafio técnico, utilizando PHP 8, Slim Framework 3, Doctrine ORM, PostgreSQL, Docker, Twig/Bootstrap, PHPUnit e Phinx para migrations.
+Sistema bancário desenvolvido em **PHP 8**, **Slim Framework 3**, **Doctrine ORM**, **PostgreSQL**, **Twig**, **Bootstrap** e **Docker**.
 
-## Funcionalidades Implementadas
+O projeto implementa operações bancárias básicas com foco em:
 
-### Admin Bancário
-- Criar contas bancárias
-- Visualizar contas cadastradas
-- Visualizar saldos
+* Integridade de saldo
+* Concorrência segura
+* Arquitetura organizada
+* Testes automatizados
+* Boa experiência de uso
+
+---
+
+## Funcionalidades
+
+### Administração
+
+* Login administrativo
+* Criação de contas bancárias
+* Dashboard com métricas do sistema
+* Listagem de contas cadastradas
 
 ### Usuário de Conta
-- Login por conta
-- Visualizar saldo
-- Creditar valores
-- Debitar valores
-- Transferir entre contas
-- Emitir extrato
 
-## Regras de Negócio
+* Login por conta
+* Visualização de saldo
+* Crédito em conta
+* Débito em conta
+* Transferência entre contas
+* Extrato com filtros e paginação
 
-- Não permite saldo negativo
-- Não permite transferência para a mesma conta
-- Não permite valores inválidos
-- Toda movimentação gera histórico de extrato
+---
 
-## Controle de Concorrência
+## Diferenciais Técnicos Implementados
 
-Para garantir consistência em operações concorrentes:
-- Uso de transações com Doctrine
-- Lock pessimista (`PESSIMISTIC_WRITE`)
-- Lock ordenado em transferências para minimizar deadlocks
+* Controle de concorrência com **Pessimistic Lock**
+* Transações atômicas com Doctrine
+* Proteção contra **saldo negativo**
+* Constraints de negócio no banco de dados
+* Proteção **CSRF**
+* Sessão segura com regeneração de ID
+* Testes de integração automatizados
+* Banco separado para testes
+
+---
 
 ## Stack Utilizada
 
-- PHP 8
-- Slim Framework 3
-- Doctrine ORM
-- PostgreSQL
-- Twig
-- Bootstrap 5
-- PHPUnit
-- Phinx
-- Docker / Docker Compose
+* PHP 8.0
+* Slim Framework 3
+* Doctrine ORM
+* PostgreSQL
+* Twig
+* Bootstrap 5
+* Docker / Docker Compose
+* PHPUnit
+* Phinx
 
-## Como Rodar o Projeto
+---
+
+## Requisitos
+
+* Docker
+* Docker Compose
+
+---
+
+## Como rodar o projeto do zero
 
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/Laelz/Cast.git
-cd Cast
+git clone <url-do-repositorio>
+cd nome-do-projeto
 ```
+
+---
 
 ### 2. Subir os containers
 
@@ -58,55 +83,101 @@ cd Cast
 docker compose up -d --build
 ```
 
-### 3. Instalar dependências
+---
+
+### 3. Instalar dependências PHP
 
 ```bash
 docker compose exec app composer install
 ```
 
-### 4. Rodar migrations
+---
+
+### 4. Criar banco de testes
+
+```bash
+docker compose exec db psql -U app_user -d postgres -c "CREATE DATABASE app_db_test;"
+```
+
+---
+
+### 5. Rodar migrations do ambiente principal
 
 ```bash
 docker compose exec app ./vendor/bin/phinx migrate
 ```
 
-Esse comando irá:
-- criar as tabelas do banco
-- registrar o histórico de migrations
-- criar automaticamente a conta admin inicial
+---
 
-### 5. Acessar a aplicação
+### 6. Rodar migrations do ambiente de teste
 
-Abra no navegador:
+```bash
+docker compose exec app ./vendor/bin/phinx migrate -e testing
+```
+
+---
+
+## Acesso ao Sistema
+
+### Aplicação
 
 ```text
 http://localhost:8080
 ```
 
-## Credenciais Iniciais
-
-### Admin Bancário
+### Credenciais Admin Padrão
 
 ```text
 Email: admin@bank.com
 Senha: 123456
 ```
 
-## Executando os Testes
+---
+
+## Rodando os Testes
+
+O projeto utiliza um **banco exclusivo para testes (`app_db_test`)**.
+
+### Executar toda a suíte
 
 ```bash
 docker compose exec app ./vendor/bin/phpunit
 ```
 
-## Cobertura de Testes
+---
 
-Testes de integração cobrindo:
-- criação de conta
-- crédito
-- débito
-- bloqueio por saldo insuficiente
-- transferência entre contas
-- bloqueio de transferência inválida
+## Estrutura dos Testes
+
+Atualmente são cobertos cenários como:
+
+* Criação de conta
+* E-mail duplicado
+* E-mail inválido
+* Senha inválida
+* Crédito
+* Débito
+* Saldo insuficiente
+* Transferência
+* Transferência inválida
+* Extrato de conta
+
+---
+
+## Banco de Dados
+
+### Banco principal
+
+```text
+app_db
+```
+
+### Banco de testes
+
+```text
+app_db_test
+```
+
+---
 
 ## Estrutura do Projeto
 
@@ -114,34 +185,54 @@ Testes de integração cobrindo:
 app/
 ├── Controllers/
 ├── Entities/
+├── Exceptions/
+├── Middleware/
+├── Routes/
 ├── Services/
 
 config/
-├── doctrine.php
-
 db/
-├── migrations/
-
 templates/
-├── admin/
-├── account/
-├── auth/
-
 tests/
-├── Integration/
 ```
 
-## Decisões Técnicas
+---
 
-### Histórico separado em `transactions`
-Mantém auditoria completa das movimentações.
+## Segurança Implementada
 
-### Duas transações por transferência
-Cada transferência gera:
-- `transfer_out`
-- `transfer_in`
+* CSRF Protection via middleware customizado
+* Session Regeneration no login
+* Logout seguro
+* Validação de dados de entrada
+* Hash de senha com password_hash
 
-Isso permite extrato correto para ambas as contas.
+---
 
-### Saldo persistido em `accounts`
-Mantido para leitura rápida e performance.
+## Concorrência / Integridade
+
+Operações financeiras utilizam:
+
+* Transações de banco de dados
+* Pessimistic Lock (`PESSIMISTIC_WRITE`)
+* Lock ordenado em transferências
+
+Garantindo consistência mesmo sob múltiplas requisições simultâneas.
+
+---
+
+## Observações
+
+Caso precise recriar completamente o ambiente:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+Depois rode novamente as migrations.
+
+---
+
+## Autor
+
+Desenvolvido por Lael Albuquerque
